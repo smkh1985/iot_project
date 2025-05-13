@@ -6,14 +6,20 @@ This project simulates multiple IoT sensors (e.g., temperature and humidity) usi
 
 ## 🧱 System Architecture
 
-- **Sensor Simulator (Go)** – Simulates multiple sensors concurrently and publishes readings to Kafka.
+- **Sensor Simulator (Go)** – Simulates multiple sensors concurrently and publishes readings to Kafka using a YAML config.
 - **Kafka** – Message broker for real-time data.
 - **Kafka Consumer (Go)** – Reads messages from Kafka and writes them to InfluxDB.
 - **InfluxDB** – Time-series database for storing sensor data.
 - **Grafana** – Visualizes sensor data and supports alerting.
 - **Docker Compose** – Orchestrates all components for local or cloud deployment.
 
+### 📷 Architecture Diagram
+
 ![System Diagram](./docs/system-diagram.png)
+
+### 📷 Grafana Example
+
+![Grafana Dashboard](./docs/grafana-dashboard.png)
 
 ---
 
@@ -31,7 +37,8 @@ docker compose up --build -d
 ```
 
 This will spin up all services:
-- 3 simulated sensors
+
+- Sensor simulator (multi-sensor via config.yaml)
 - Kafka + Zookeeper
 - Kafka UI
 - InfluxDB
@@ -42,19 +49,24 @@ This will spin up all services:
 
 ## ⚙️ Configuration
 
-### `.env` (sample)
+### `config.yaml` (multi-sensor setup)
 
-Each sensor service can be configured via its own `.env` file:
+Configure multiple sensors in one file:
 
-```env
-KAFKA_BROKER=kafka:9092
-KAFKA_TOPIC=iot-sensors
-SENSOR_TYPE=temperature
-SENSOR_ID=sensor-1
-SENSOR_INTERVAL=2s
+```yaml
+sensors:
+  - id: sensor-1
+    type: temperature
+    interval: 2s
+  - id: sensor-2
+    type: humidity
+    interval: 3s
+  - id: sensor-3
+    type: temperature
+    interval: 5s
 ```
 
-Multiple `.env` files can simulate different sensors, each as a separate Docker Compose service.
+This file is loaded at runtime and each sensor runs in a separate goroutine.
 
 ---
 
@@ -86,13 +98,14 @@ You can configure alerts in Grafana based on thresholds (e.g., temperature > 30�
 ```
 .
 ├── docker-compose.yml
-├── .env (per sensor)
-├── sensors/           # Go code for sensor simulator
-├── influx-writer/     # Go code for Kafka-to-Influx consumer
-├── Dockerfile         # Multi-stage build for Go apps
-├── init-sensors.iql   # Creates DB if needed
+├── config.yaml             # ✅ multi-sensor configuration file
+├── sensors/                # Go code for sensor simulator
+├── influx-writer/          # Go code for Kafka-to-Influx consumer
+├── Dockerfile              # Multi-stage build for Go app
+├── init-sensors.iql        # Creates InfluxDB database if needed
 └── docs/
-    └── system-diagram.png
+    ├── system-diagram.png
+    └── grafana-dashboard.png
 ```
 
 ---
